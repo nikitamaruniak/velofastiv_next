@@ -1,5 +1,8 @@
 #!/bin/bash
 
+image_name=velofastiv
+container_name=velofastiv
+
 exit_code=0
 
 function usage {
@@ -13,11 +16,11 @@ function usage {
 
 function run {
     echo Building Docker image...
-    docker build -t velofastiv .
+    docker build -t $image_name .
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Running Docker container...
-    docker run -d -it -p 80:80 --rm -h velofastiv.org.ua --name velofastiv -i velofastiv
+    docker run -d -it -p 80:80 --rm -h velofastiv.org.ua --name $container_name -i $image_name
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
@@ -31,11 +34,11 @@ function run {
 
 function stop {
     echo Stopping Docker container...
-    docker stop velofastiv
+    docker stop $container_name
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Removing Docker image...
-    docker rmi velofastiv
+    docker rmi $image_name
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
