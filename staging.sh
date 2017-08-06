@@ -1,7 +1,7 @@
 #!/bin/bash
 
 image_name=velofastiv
-container_name=velofastiv
+container_name=velofastiv-staging
 
 exit_code=0
 
