@@ -12,12 +12,18 @@ function usage {
 }
 
 function run {
+    echo Building Docker image...
+    docker build -t velofastiv .
+    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+
     echo Running Docker container...
-    docker run -d -it -p 80:80 --rm -h velofastiv.org.ua --name velofastiv -i nginx
+    docker run -d -it -p 80:80 --rm -h velofastiv.org.ua --name velofastiv -i velofastiv
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
     echo 127.0.0.1 velofastiv.org.ua | sudo tee -a /etc/hosts
+    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    echo 127.0.0.1 www.velofastiv.org.ua | sudo tee -a /etc/hosts
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Done
@@ -26,6 +32,10 @@ function run {
 function stop {
     echo Stopping Docker container...
     docker stop velofastiv
+    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+
+    echo Removing Docker image...
+    docker rmi velofastiv
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
