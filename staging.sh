@@ -1,5 +1,6 @@
 #!/bin/bash
 
+hostname=staging.velofastiv.org.ua
 image_name=velofastiv
 container_name=velofastiv-staging
 
@@ -20,13 +21,11 @@ function run {
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Running Docker container...
-    docker run -d -it -p 80:80 --rm -h velofastiv.org.ua --name $container_name -i $image_name
+    docker run -d -it -p 80:80 --rm -h $hostname --name $container_name -i $image_name
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
-    echo 127.0.0.1 velofastiv.org.ua | sudo tee -a /etc/hosts
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
-    echo 127.0.0.1 www.velofastiv.org.ua | sudo tee -a /etc/hosts
+    echo 127.0.0.1 $hostname | sudo tee -a /etc/hosts
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Done
@@ -42,7 +41,7 @@ function stop {
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
-    sudo sed -i '' '/velofastiv\.org\.ua/d' /etc/hosts
+    sudo sed -i '' "/$hostname/d" /etc/hosts
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
     echo Done
