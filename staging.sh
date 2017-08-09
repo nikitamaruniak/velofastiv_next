@@ -28,6 +28,10 @@ function run {
     echo 127.0.0.1 $hostname | sudo tee -a /etc/hosts
     if [[ $? != 0 ]]; then exit_code=$?; return; fi
 
+    echo "Running smoke tests..."
+    ./smoke_tests.sh $hostname
+    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+
     echo Done
 }
 
