@@ -61,11 +61,16 @@ function command {
     esac
 }
 
+PWD_backup=$PWD
+cd `dirname $0`
+
 if [ -z $1 ]
 then
    usage
 else
    command $1
 fi
+
+cd $PWD_backup
 
 exit $exit_code
