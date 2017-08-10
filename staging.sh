@@ -16,17 +16,45 @@ function usage {
 }
 
 function run {
-    echo Building the Docker image...
-    docker build -t $image_name .
+    echo "Checking if the Docker image exists: '$container_name'..."
+    image_id=`docker images $image_name:latest --format '{{.ID}}'`
     if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    if [[ -z $image_id ]]
+    then
+        echo Building the Docker image...
+        docker build -t $image_name .
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    else
+        echo "The Docker image exists: '$image_id'."
+    fi
 
+    echo "Checking if the Docker container exists: '$container_name'..."
+    container_id=`docker ps -f name=$container_name --format '{{.ID}}'`
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    if [[ -z $container_id ]]
+    then
     echo Running the Docker container...
-    docker run -d -it -p 80:80 --rm -h $hostname --name $container_name -i $image_name
-    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+        docker run -d -it -p 80:80 --rm -h $hostname --name $container_name -i $image_name
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    else
+        echo "The Docker container exists: '$container_id'."
+    fi
 
-    echo Modifying the hosts file...
-    echo 127.0.0.1 $hostname | sudo tee -a /etc/hosts
-    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    echo "Checking if the hostname is mapped to an IP address: '$hostname'."
+    grep -q $hostname /etc/hosts
+    grep_exit_code=$?
+    if [[ $grep_exit_code -eq 1 ]]
+    then
+        echo Modifying the hosts file...
+        echo "127.0.0.1 $hostname" | sudo tee -a /etc/hosts
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    elif [[ $grep_exit_code -eq 0 ]]
+    then
+        echo "The hostname is mapped to an IP address."
+    else
+        exit_code=$grep_exit_code
+        return
+    fi
 
     echo "Running smoke tests..."
     ./smoke_tests.sh $hostname
@@ -36,17 +64,45 @@ function run {
 }
 
 function stop {
-    echo Stopping the Docker container...
-    docker stop $container_name
+    echo "Checking if the Docker container exists: '$container_name'..."
+    container_id=`docker ps -f name=$container_name --format '{{.ID}}'`
     if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    if [[ -n $container_id ]]
+    then
+        echo Stopping the Docker container...
+        docker stop $container_name
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    else
+        echo "The Docker container does not exist."
+    fi
 
-    echo Removing the Docker image...
-    docker rmi $image_name
+    echo "Checking if the Docker image exists: '$image_name:latest'..."
+    image_id=`docker images $image_name:latest --format '{{.ID}}'`
     if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    if [[ -n $image_id ]]
+    then
+        echo Removing the Docker image...
+        docker rmi $image_name
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    else
+        echo "The Docker image does not exist."
+    fi
 
-    echo Modifying the hosts file...
-    sudo sed -i '' "/$hostname/d" /etc/hosts
-    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    echo "Checking if the hostname is mapped to an IP address: '$hostname'..."
+    grep -q $hostname /etc/hosts
+    grep_exit_code=$?
+    if [[ $grep_exit_code -eq 0 ]]
+    then
+        echo Modifying the hosts file...
+        sudo sed -i '' "/$hostname/d" /etc/hosts
+        if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
+    elif [[ $grep_exit_code -eq 1 ]]
+    then
+        echo "The hostname is not mapped to an IP address."
+    else
+        exit_code=$grep_exit_code
+        return
+    fi
 
     echo Done
 }
