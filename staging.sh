@@ -18,19 +18,19 @@ function usage {
 function run {
     echo Building Docker image...
     docker build -t $image_name .
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Running Docker container...
     docker run -d -it -p 80:80 --rm -h $hostname --name $container_name -i $image_name
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
     echo 127.0.0.1 $hostname | sudo tee -a /etc/hosts
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo "Running smoke tests..."
     ./smoke_tests.sh $hostname
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Done
 }
@@ -38,15 +38,15 @@ function run {
 function stop {
     echo Stopping Docker container...
     docker stop $container_name
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Removing Docker image...
     docker rmi $image_name
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Modifying hosts file...
     sudo sed -i '' "/$hostname/d" /etc/hosts
-    if [[ $? != 0 ]]; then exit_code=$?; return; fi
+    if [[ $? -ne 0 ]]; then exit_code=$?; return; fi
 
     echo Done
 }
